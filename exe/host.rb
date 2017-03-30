@@ -4,5 +4,11 @@ require_relative "../lib/Network/network"
 Network.host(8088)
 
 # Temporary hack to keep the application going, thread will be kept alive by game engine in future
+
+puts "Press enter to start..."
+gets
+chat = SimpleChat.new
+
 while true
+  chat.send_message("Host", gets)
 end

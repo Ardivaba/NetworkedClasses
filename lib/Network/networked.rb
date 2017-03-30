@@ -1,22 +1,32 @@
 module Networked
   attr_reader :is_mine, :identity
+  attr_accessor :info, :owner
   def initialize(*args)
+    Network.object_manager.objects << self
+
     if args.last() == -1
       @owner = args.last(3)[0]
       @identity = args.last(3)[1]
       @is_mine = false
 
-      puts "Spawned remote object Owner: #{@owner} Identity: #{@identity}"
+      # puts "Spawned remote object Owner: #{@owner} Identity: #{@identity}"
+      puts "#{self.class} Initialized remotely"
     else
       puts "Spawned original object"
       @identity = SecureRandom.uuid
       @owner = Network.connection_id
+      @info = {
+        owner: @owner,
+        identity: @identity,
+        remote: 0
+      }
       self.spawn_object(*args)
 
       @is_mine = true
     end
 
     Network.register_object(self)
+    Network.register_listener(self)
   end
 
   # Applies replicated fields
@@ -28,13 +38,13 @@ module Networked
 
   # Broadcasts spawn event with net vars
   def spawn_object(*args)
-    puts "Spawning entity: #{self} with id #{self.net_id}"
+    puts "Spawning entity: #{self} with id #{self.identity}"
 
     # Broadcast spawn packet with networked fields
     Network.broadcast({
-      type: "spawn",
-      class: self.class.to_s,
-      args: args << Network.connection_id << self.identity << -1
+        type: "spawn",
+        class: self.class.to_s,
+        args: args << Network.connection_id << self.identity << -1
       })
   end
 

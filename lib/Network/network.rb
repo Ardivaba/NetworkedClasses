@@ -2,8 +2,6 @@ require_relative "include"
 
 # Responsible for networking
 module Network
-  attr_reader :owner_id
-
   @@id = SecureRandom.uuid
   def self.connection_id
     @@id
@@ -11,7 +9,11 @@ module Network
 
   @@is_host = false
   def self.is_host
-    is_host
+    @@is_host
+  end
+
+  def self.net
+    @net
   end
 
   @@client_connections = {}
@@ -25,22 +27,6 @@ module Network
     puts replicated_object.identity
   end
 
-  # Starts socket and thread for host. ! Unused, here just for reference, that is managed by NetworkHost now
-  def self._host(port)
-    @socket = Socket.udp_server_loop(port) do |data, src|
-      packet = JSON.parse(data)
-
-      if packet["channel"] == "setup"
-        case packet["type"]
-        when "connection"
-          self.client_connection(*packet.value, src)
-        end
-      else
-        self.send("client_#{packet["type"]}", *packet.values)
-      end
-    end
-  end
-
   # Are we connected to the network?
   def self.connected
     true
@@ -51,34 +37,46 @@ module Network
     @net = NetworkHost.new(nil, port)
   end
 
-  # Starts socket and thread for client ! Unused, here just for reference, that is managed by NetworkClient now
-  def self._join(ip, port)
-    @ip = ip
-    @port = port
-    @socket = UDPSocket.new
-
-    self.broadcast(({
-      type: "connection",
-      connection_id: Network.connection_id
-      }))
-  end
-
   def self.join(ip, port)
     @net = NetworkClient.new(ip, port)
 
-    self.broadcast({
-      type: "connection",
-      connection_id: Network.connection_id
-      })
+    #self.broadcast({
+    #  type: "connection",
+    #  connection_id: Network.connection_id
+    #  })
   end
 
   # Broadcasts packet to all other connected parties
   def self.broadcast(packet)
-    puts "Broadcasting packet: #{packet}"
+    # puts "Broadcasting packet: #{packet}"
     @net.send_raw(packet)
   end
 
   def self.register_object(object)
 
+  end
+
+  # Listeners static field
+  @@listeners = []
+  def self.listeners
+    @@listeners
+  end
+
+  # Register listener that will get network events
+  def self.register_listener(object)
+    @@listeners << object
+    puts "Registered #{object.class} as EventListener"
+  end
+
+  # Is this even the right place, i'd assume not
+  @@connection_manager = ConnectionManager.new
+  @@object_manager = ObjectManager.new
+
+  def self.object_manager
+    @@object_manager
+  end
+
+  def self.connection_manager
+    @@connection_manager
   end
 end
