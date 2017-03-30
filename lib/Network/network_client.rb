@@ -15,7 +15,7 @@ module Network
     end
 
     def packet(packet, net_id)
-      puts packet
+      # puts packet
       super(packet, net_id)
     end
   end

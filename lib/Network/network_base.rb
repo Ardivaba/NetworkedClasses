@@ -20,7 +20,7 @@ module Network
         @cached_spawn_packets << packet
         puts "Cached spawn packet fo #{self.class}"
       end
-      
+
       @socket.send(packet.to_json, 0, @ip, @port)
     end
 
